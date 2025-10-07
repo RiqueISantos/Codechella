@@ -1,6 +1,9 @@
 package br.com.henriquedev.codechella.service;
 
+import br.com.henriquedev.codechella.controller.response.EventoResponse;
 import br.com.henriquedev.codechella.entity.Evento;
+import br.com.henriquedev.codechella.enums.TipoEvento;
+import br.com.henriquedev.codechella.mapper.EventoMapper;
 import br.com.henriquedev.codechella.repository.EventoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,4 +34,9 @@ public class EventoService {
                 .flatMap(repository::delete);
     }
 
+    public Flux<EventoResponse> obterPorTipo(String tipo) {
+        TipoEvento tipoEvento = TipoEvento.valueOf(tipo.toUpperCase());
+        return repository.findByTipo(tipoEvento)
+                .map(EventoMapper::toEventoResponse);
+    }
 }

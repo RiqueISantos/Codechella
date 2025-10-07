@@ -13,6 +13,8 @@ import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
+
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/eventos")
@@ -20,10 +22,16 @@ public class EventoController {
 
     private final EventoService service;
 
-    @GetMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @GetMapping()
     public Flux<EventoResponse> pegarEventos(){
         return service.findAll()
                 .map(EventoMapper::toEventoResponse);
+    }
+
+    @GetMapping(value = "/categoria/{tipo}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<EventoResponse> obterPorTipo(@PathVariable String tipo){
+        return Flux.from(service.obterPorTipo(tipo))
+                .delayElements(Duration.ofSeconds(4));
     }
 
     @GetMapping("/{id}")
