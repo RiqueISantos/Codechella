@@ -25,7 +25,7 @@ public class IngressoController {
                 .map(IngressoMapper::toIngressoResponse);
     }
 
-    @GetMapping()
+    @GetMapping("/{id}")
     public Mono<IngressoResponse> listarIngressoPorId(@PathVariable Long id){
         return service.findById(id)
                 .map(IngressoMapper::toIngressoResponse)
@@ -40,14 +40,14 @@ public class IngressoController {
                 .map(IngressoMapper::toIngressoResponse);
     }
 
-    @PutMapping()
+    @PutMapping("/{id}")
     public Mono<IngressoResponse> alterarIngresso(@RequestBody IngressoRequest request, @PathVariable Long id){
         Ingresso optIngresso = IngressoMapper.toIngresso(request);
         return service.update(optIngresso, id)
                 .map(IngressoMapper::toIngressoResponse);
     }
 
-    @DeleteMapping()
+    @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<Void> deletarIngresso(@PathVariable Long id){
         return service.delete(id)
