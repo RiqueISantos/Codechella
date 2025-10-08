@@ -1,23 +1,35 @@
 package br.com.henriquedev.codechella.controller;
 
+import br.com.henriquedev.codechella.controller.request.CompraRequest;
 import br.com.henriquedev.codechella.controller.request.IngressoRequest;
 import br.com.henriquedev.codechella.controller.response.IngressoResponse;
 import br.com.henriquedev.codechella.entity.Ingresso;
 import br.com.henriquedev.codechella.mapper.IngressoMapper;
 import br.com.henriquedev.codechella.service.IngressoService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
+
+import java.time.Duration;
 
 @RestController
 @RequestMapping("/ingressos")
-@RequiredArgsConstructor
 public class IngressoController {
 
     private final IngressoService service;
+    private final Sinks.Many<IngressoResponse> ingressoSink;
+
+    public IngressoController(IngressoService service) {
+        this.service = service;
+        this.ingressoSink = Sinks.many().multicast().onBackpressureBuffer();
+    }
 
     @GetMapping()
     public Flux<IngressoResponse> listarIngressos(){
@@ -54,4 +66,13 @@ public class IngressoController {
                 .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)));
     }
 
+    @PostMapping("/compra")
+    public Mono<IngressoResponse> comprar(@RequestBody CompraRequest request) {
+        return service.comprar(request).doOnSuccess(ingressoSink::tryEmitNext);
+    }
+
+    @GetMapping(value = "/{id}/disponivel", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<IngressoResponse> totalDisponivel(@PathVariable Long id) {
+        return Flux.merge(service.findById(id).map(IngressoMapper::toIngressoResponse), ingressoSink.asFlux());
+    }
 }

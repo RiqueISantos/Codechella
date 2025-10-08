@@ -1,21 +1,29 @@
 package br.com.henriquedev.codechella.service;
 
+import br.com.henriquedev.codechella.controller.request.CompraRequest;
+import br.com.henriquedev.codechella.controller.response.IngressoResponse;
 import br.com.henriquedev.codechella.entity.Ingresso;
+import br.com.henriquedev.codechella.entity.Venda;
+import br.com.henriquedev.codechella.mapper.IngressoMapper;
 import br.com.henriquedev.codechella.repository.IngressoRepository;
+import br.com.henriquedev.codechella.repository.VendaRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class IngressoService {
 
+    private static final Logger log = LoggerFactory.getLogger(IngressoService.class);
     private final IngressoRepository repository;
+    private final VendaRepository vendaRepository;
 
     public Flux<Ingresso> findAll(){
         return repository.findAll();
@@ -45,5 +53,20 @@ public class IngressoService {
         return repository.findById(id)
                 .flatMap(repository::delete);
     }
+
+    @Transactional
+    public Mono<IngressoResponse> comprar(CompraRequest compra) {
+        return repository.findById(compra.ingressoId())
+                .flatMap(ingresso -> {
+                    Venda venda = new Venda();
+                    venda.setIngressoId(ingresso.getId());
+                    venda.setTotal(compra.total());
+                    return vendaRepository.save(venda).then(Mono.defer(() -> {
+                        ingresso.setTotal(ingresso.getTotal() - compra.total());
+                        return repository.save(ingresso);
+                    }));
+                }).map(IngressoMapper::toIngressoResponse);
+    }
+
 
 }
