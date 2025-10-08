@@ -21,7 +21,6 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class IngressoService {
 
-    private static final Logger log = LoggerFactory.getLogger(IngressoService.class);
     private final IngressoRepository repository;
     private final VendaRepository vendaRepository;
 
