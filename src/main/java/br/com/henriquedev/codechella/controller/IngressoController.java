@@ -6,9 +6,6 @@ import br.com.henriquedev.codechella.controller.response.IngressoResponse;
 import br.com.henriquedev.codechella.entity.Ingresso;
 import br.com.henriquedev.codechella.mapper.IngressoMapper;
 import br.com.henriquedev.codechella.service.IngressoService;
-import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -16,8 +13,6 @@ import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
-
-import java.time.Duration;
 
 @RestController
 @RequestMapping("/ingressos")

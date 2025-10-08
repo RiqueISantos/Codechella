@@ -12,15 +12,22 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
 
 import java.time.Duration;
 
-@RequiredArgsConstructor
 @RestController
 @RequestMapping("/eventos")
 public class EventoController {
 
     private final EventoService service;
+    private final Sinks.Many<EventoResponse> eventoSynk;
+
+    public EventoController(EventoService service){
+        this.service = service;
+        this.eventoSynk = Sinks.many().multicast().onBackpressureBuffer();
+    }
+
 
     @GetMapping()
     public Flux<EventoResponse> pegarEventos(){
@@ -30,7 +37,7 @@ public class EventoController {
 
     @GetMapping(value = "/categoria/{tipo}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<EventoResponse> obterPorTipo(@PathVariable String tipo){
-        return Flux.from(service.obterPorTipo(tipo))
+        return Flux.merge(service.obterPorTipo(tipo), eventoSynk.asFlux())
                 .delayElements(Duration.ofSeconds(4));
     }
 
@@ -46,6 +53,7 @@ public class EventoController {
     public Mono<EventoResponse> enviarEvento(@RequestBody EventoRequest eventoRequest){
         Evento saveEvento = EventoMapper.toEvento(eventoRequest);
         return service.save(saveEvento)
+                .doOnSuccess(e -> eventoSynk.tryEmitNext(EventoMapper.toEventoResponse(e)))
                 .map(EventoMapper::toEventoResponse);
     }
 
